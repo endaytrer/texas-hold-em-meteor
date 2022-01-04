@@ -1,0 +1,59 @@
+.other-players {
+  width: 100%;
+  margin-bottom: 10px;
+}
+.players-container {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  overflow-x: scroll;
+}
+.public {
+  padding: 15px 10px 15px;
+  border-radius: 6px;
+  width: 100%;
+  background-color: white;
+  box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.12);
+  flex-grow: 1;
+  margin: 10px 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+}
+.info-table {
+  width: calc(100% - 20px);
+}
+.public-cards > h3 {
+  line-height: 0;
+}
+.public-cards-container {
+  min-height: 140px;
+  background-color: rgb(115, 199, 133);
+  box-shadow: inset 0px 2px 4px rgba(0, 0, 0, 0.12);
+  border-radius: 6px;
+  width: 100%;
+  padding: 10px;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.public .now-stage {
+  font-weight: normal;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  width: 20%;
+  color: #888;
+  font-size: 0.8rem;
+}
+.public .stage-display {
+  font-weight: bold;
+}
+.summary {
+  width: 100%;
+}
+.summary > .show-container {
+  display: flex;
+}

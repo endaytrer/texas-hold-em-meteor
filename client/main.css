@@ -1,0 +1,448 @@
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,
+    Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  color: #1a1a1b;
+}
+.background {
+  background-image: linear-gradient(67deg, rgb(45, 45, 231), rgb(70, 169, 202));
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.container {
+  width: 60%;
+  max-width: 800px;
+  min-height: 400px;
+  height: calc(100vh - 40px);
+  max-height: 800px;
+  padding: 20px;
+  background-color: whitesmoke;
+  box-shadow: 0px 25px 40px rgba(0, 0, 0, 0.1);
+  border-radius: 15px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+@media screen and (max-width: 800px) {
+  .container {
+    width: calc(100% - 40px);
+  }
+}
+.container h1 {
+  font-size: 3rem;
+  color: #4f4f4f;
+  display: flex;
+  justify-content: space-between;
+  margin: 20px 0 0;
+}
+
+@media screen and (max-width: 600px) {
+  .container h1 {
+    flex-direction: column;
+  }
+}
+h1 .main {
+  position: relative;
+}
+.container h1 span.red {
+  font-size: 3rem;
+  color: #f82020;
+}
+
+.container h1 span.black {
+  font-size: 3rem;
+  color: #141414;
+}
+.container h1 .main::after {
+  content: "Texas Hold'em";
+  position: absolute;
+  width: 100%;
+  left: 0;
+  top: 0;
+  color: transparent;
+  background-image: linear-gradient(
+    90deg,
+    rgb(155, 240, 76),
+    rgb(20, 139, 20),
+    rgb(93, 93, 231)
+  );
+  background-clip: text;
+  -webkit-background-clip: text;
+  clip-path: ellipse(5rem 5rem at 0 50%);
+  -webkit-clip-path: ellipse(5rem 5rem at 0 50%);
+  animation: spotlight 10s infinite ease-in-out;
+}
+@keyframes spotlight {
+  0% {
+    clip-path: ellipse(5rem 5rem at 0 50%);
+    -webkit-clip-path: ellipse(5rem 5rem at 0 50%);
+  }
+  50% {
+    clip-path: ellipse(5rem 5rem at 100% 50%);
+    -webkit-clip-path: ellipse(5rem 5rem at 100% 50%);
+  }
+  100% {
+    clip-path: ellipse(5rem 5rem at 0 50%);
+    -webkit-clip-path: ellipse(5rem 5rem at 0 50%);
+  }
+}
+.container input {
+  width: 100%;
+  height: 3rem;
+  font-size: 1.2rem;
+  border: none;
+  outline: none;
+  margin: 10px 0;
+  border-radius: 6px;
+  padding: 0px 6px;
+  transition: box-shadow 200ms;
+  box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.1);
+  color: #3b3b3b;
+}
+.container input:focus {
+  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+}
+#join {
+  outline: none;
+  border: none;
+  width: 100%;
+  margin: 40px 0 0;
+  height: 3rem;
+  background-color: #557cff;
+  font-size: 1.2rem;
+  color: white;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 200ms ease-out;
+}
+#join:hover {
+  background-color: #678bff;
+}
+
+#join:active {
+  background-color: #436fff;
+}
+
+/* GamePlay */
+.game-play {
+  width: 100%;
+  height: 100vh;
+  min-height: 600px;
+  padding: 10px;
+  background-image: linear-gradient(67deg, rgb(45, 45, 231), rgb(70, 169, 202));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+}
+.game-play > .navigator {
+  z-index: 100;
+  width: 100%;
+  height: 50px;
+  padding: 0 5px 0 20px;
+  background-color: whitesmoke;
+  border-radius: 6px 25px 25px 6px;
+  box-shadow: 0px 25px 40px rgba(0, 0, 0, 0.1);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.game-play > .navigator > .player-info {
+  display: flex;
+  align-items: center;
+  font-weight: bolder;
+  color: #696969;
+}
+
+.game-play > .navigator > .player-info > .host-label {
+  color: white;
+  background-color: #696969;
+  height: 1.4rem;
+  width: 1.4rem;
+  border-radius: 0.7rem;
+  margin-right: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.game-play > .navigator > .buttons {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+#setting-button {
+  height: 50px;
+  width: 40px;
+  border: none;
+  outline: none;
+  background: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.setting-panel {
+  display: none;
+  position: absolute;
+  width: 300px;
+  height: 400px;
+  top: 50px;
+  right: -5px;
+  border-radius: 6px;
+  background-color: rgb(230, 230, 230);
+  box-shadow: 0px 10px 40px rgba(0, 0, 0, 0.15);
+  padding: 10px;
+  flex-direction: column;
+  justify-content: space-between;
+}
+.setting-panel h3 {
+  margin: 25px 0 0;
+}
+.setting-panel label {
+  display: block;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 0.8rem;
+  color: #666;
+  margin: 10px 0 2px;
+}
+.setting-panel .input_container {
+  display: flex;
+  flex-direction: column;
+}
+.setting-panel input {
+  display: block;
+  border: none;
+  outline: none;
+  height: 2rem;
+  width: 100%;
+  font-size: 1.1rem;
+  border-radius: 4px;
+  padding: 0px 5px;
+  box-shadow: inset 0px 0px 4px rgba(0, 0, 0, 0.1);
+}
+#start-playing {
+  border: none;
+  outline: none;
+  color: white;
+  border-radius: 4px;
+  font-size: 1.1rem;
+  height: 2.5rem;
+  background-color: #557cff;
+  cursor: pointer;
+}
+#setting-button:hover + .setting-panel,
+#setting-button:focus + .setting-panel,
+.setting-panel:focus-within,
+.setting-panel:hover {
+  display: flex;
+}
+#quit-button {
+  height: 40px;
+  width: 40px;
+  border: none;
+  outline: none;
+  /* background-color: #f73737; */
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border: 3px solid #f73737;
+  background: none;
+  transition: background-color 200ms ease-out;
+}
+#quit-button svg {
+  fill: #f73737;
+  transition: fill 200ms ease-out;
+}
+#quit-button:hover {
+  background-color: #f73737;
+}
+#quit-button:hover > svg {
+  fill: white;
+}
+
+.game-play > .hand {
+  width: 100%;
+  height: 160px;
+  padding: 10px;
+  background-color: whitesmoke;
+  border-radius: 6px;
+  box-shadow: 0px -8px 40px rgba(0, 0, 0, 0.1);
+  display: flex;
+  justify-content: space-between;
+}
+.game-play > .hand > .hand-cards {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+.hand h3 {
+  margin: 10px 0 0;
+}
+@media screen and (max-width: 500px) {
+  .game-play > .navigator > h3 {
+    display: none;
+  }
+
+  .setting-panel {
+    top: 50px;
+  }
+}
+.public-cards {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.cards-container {
+  width: 100%;
+  min-width: 36vw;
+  padding: 10px 0 0;
+  display: flex;
+  align-items: center;
+}
+.card {
+  border-radius: 12px;
+  background-color: rgb(255, 255, 255);
+  padding: 10px;
+  box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.12);
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: rgb(44, 44, 44);
+  margin-right: 10px;
+}
+.card.regular {
+  width: 18vw;
+  max-width: 70px;
+  height: 95px;
+}
+.card.small {
+  width: 40px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.card > .card-info-container {
+  width: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.card > .card-info-container.red {
+  color: red;
+}
+.card > .card-info-container .rank {
+  letter-spacing: -1px;
+  height: 1.8ex;
+}
+.hand > .bet-area {
+  margin-left: 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  flex-grow: 1;
+}
+.hand > .bet-area > .tags {
+  height: 2rem;
+  display: flex;
+  align-items: center;
+}
+.hand > .bet-area > .tags > .player-tag {
+  color: white;
+  background-color: #696969;
+  padding: 4px 8px;
+  border-radius: 16px;
+  margin-right: 8px;
+}
+.hand > .bet-area > h1 {
+  margin: 0;
+}
+.hand > .bet-area > h1 > .to-bet {
+  color: #696969;
+}
+.hand > .bet-area > h1 > .to-bet > input {
+  width: 6ex;
+  font-size: 1em;
+  font-weight: inherit;
+  color: #696969;
+  border: none;
+  outline: none;
+  padding: 0;
+  background: none;
+}
+.bet-area > .button-group {
+  display: flex;
+  justify-content: space-between;
+  height: 3rem;
+}
+.bet-area > .button-group > button {
+  height: 100%;
+  flex-grow: 1;
+  margin-right: 6px;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: white;
+  border: none;
+  outline: none;
+  border-radius: 6px;
+  font-size: 1rem;
+  transition: background-color 200ms ease-out;
+  cursor: pointer;
+}
+#fold-button {
+  background-color: #fb5151;
+}
+#fold-button:hover {
+  background-color: #f56666;
+}
+#check-button {
+  background-color: #55a1e6;
+}
+#check-button:hover {
+  background-color: #70afeb;
+}
+#raise-button {
+  background-color: #bdd948;
+}
+#raise-button:hover {
+  background-color: #cae06f;
+}
+
+.bet-area > .button-group > button:disabled {
+  cursor: not-allowed;
+  background-color: #e2e2e2 !important;
+}
+.bet-area > .button-group > button:last-child {
+  margin-right: 0;
+}
+@media screen and (max-width: 500px) {
+  .hand > .bet-area > h1 {
+    font-size: 1.5rem;
+  }
+  .hand > .bet-area {
+    margin-left: 0;
+  }
+  .hand > .bet-area > h1 > .to-bet > input {
+    width: 6ex;
+  }
+  .bet-area > .button-group > button {
+    font-size: 0.8rem;
+    letter-spacing: 0;
+    padding: 0;
+  }
+}
