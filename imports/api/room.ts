@@ -24,6 +24,9 @@ export class Player {
     if (money >= player.money) {
       player.status = Player.PlayerStatus.ALL_IN;
       money = player.money;
+      player.lastAction = `All In \$${money}`;
+    } else {
+      player.lastAction = `Call \$${money}`;
     }
     player.stageBet += money;
     player.money -= money;
@@ -51,7 +54,7 @@ export class Room {
     RIVER: 3,
     DISPLAY: 4,
   };
-  winner: number | undefined;
+  winners: number[] = [];
   bestCardValue: number | undefined;
   bestCardSet: Card[] | undefined;
   dealer = 0;

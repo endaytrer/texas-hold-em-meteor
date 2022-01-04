@@ -198,25 +198,15 @@ export function getValue(cards: Card[]): number {
   return 0 + valueOfRank[sorted[4].rank] / 13;
 }
 
-export function cardLarger(a: Card, b: Card): boolean {
-  if (a.rank === 1 && b.rank !== 1) {
-    return true;
-  }
-  if (a.rank !== 1 && b.rank === 1) {
-    return false;
-  }
-  if (a.rank !== b.rank) {
-    return a.rank > b.rank;
-  }
-  return a.suit > b.suit;
+export function cardCompare(a: Card, b: Card): number {
+  return valueOfRank[a.rank] - valueOfRank[b.rank];
 }
 
 export function cardSetCompare(a: Card[], b: Card[]): number {
-  const sortedA = a.slice().sort((a, b) => (cardLarger(a, b) ? -1 : 1));
-  const sortedB = b.slice().sort((a, b) => (cardLarger(a, b) ? -1 : 1));
-  for (let i = 0; i < 5; i++) {
-    if (cardLarger(sortedA[i], sortedB[i])) return 1;
-    if (cardLarger(sortedB[i], sortedA[i])) return -1;
-  }
+  const sortedA = a.slice().sort((a, b) => cardCompare(a, b));
+  const sortedB = b.slice().sort((a, b) => cardCompare(a, b));
+  for (let i = 0; i < 5; i++)
+    if (cardCompare(sortedA[i], sortedB[i]) !== 0)
+      return cardCompare(sortedA[i], sortedB[i]);
   return 0;
 }

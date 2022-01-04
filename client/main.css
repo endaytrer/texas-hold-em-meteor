@@ -316,7 +316,6 @@ h1 .main {
   align-items: center;
 }
 .card {
-  border-radius: 12px;
   background-color: rgb(255, 255, 255);
   padding: 10px;
   box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.12);
@@ -329,13 +328,18 @@ h1 .main {
   width: 18vw;
   max-width: 70px;
   height: 95px;
+  border-radius: 12px;
 }
 .card.small {
+  border-radius: 6px;
   width: 40px;
   height: 60px;
   display: flex;
   align-items: center;
   justify-content: center;
+}
+.card.back {
+  background-color: #b2cac1;
 }
 .card > .card-info-container {
   width: 1.5rem;

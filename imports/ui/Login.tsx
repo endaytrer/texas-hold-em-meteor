@@ -1,4 +1,5 @@
 import { History } from 'history';
+import { Meteor } from 'meteor/meteor';
 import { useTracker } from 'meteor/react-meteor-data';
 import { Session } from 'meteor/session';
 import React, { useEffect, useState } from 'react';
@@ -15,10 +16,8 @@ function joinRoom(roomName: string, username: string, history: History) {
     Session.set('isGaming', true);
     Session.set('username', username);
     Session.set('roomName', roomName);
-    sessionStorage.setItem('isGaming', 'true');
-    sessionStorage.setItem('username', username);
-    sessionStorage.setItem('roomName', roomName);
     history.push('/game');
+    Meteor.call('login', username, roomName);
     return;
   } else {
     if (room.players.filter((player) => player.username === username).length) {
@@ -26,7 +25,7 @@ function joinRoom(roomName: string, username: string, history: History) {
       return;
     }
     const player = new Player(username, room.initial);
-
+    Meteor.call('login', username, roomName);
     if (room.stage !== Room.Stage.NOT_GAMING) {
       player.status = Player.PlayerStatus.FOLDED;
     }
@@ -35,9 +34,6 @@ function joinRoom(roomName: string, username: string, history: History) {
     Session.set('isGaming', true);
     Session.set('username', username);
     Session.set('roomName', roomName);
-    sessionStorage.setItem('isGaming', 'true');
-    sessionStorage.setItem('username', username);
-    sessionStorage.setItem('roomName', roomName);
     return;
   }
 }

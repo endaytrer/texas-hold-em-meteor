@@ -9,17 +9,6 @@ import { Card } from './components/Card';
 import { PlayerDisplay } from './components/PlayerDisplay';
 import './GamePlay.css';
 
-function quitGame(username: string, roomName: string) {
-  const room = RoomsCollection.findOne({ roomName });
-  if (room) {
-    room.players = room.players.filter(
-      (player) => player.username !== username
-    );
-    if (room.players.length === 0) {
-      RoomsCollection.remove({ _id: room._id });
-    } else RoomsCollection.update({ _id: room._id }, room);
-  }
-}
 const cardCombination = [
   'High Card',
   'One Pair',
@@ -79,6 +68,16 @@ export const GamePlay = () => {
   const roomName = useTracker(() => Session.get('roomName'));
   const username = useTracker(() => Session.get('username'));
   const isGaming = useTracker(() => Session.get('isGaming'));
+  const quitGame = () => {
+    if (room) {
+      room.players = room.players.filter(
+        (player) => player.username !== username
+      );
+      if (room.players.length === 0) {
+        RoomsCollection.remove({ _id: room._id });
+      } else RoomsCollection.update({ _id: room._id }, room);
+    }
+  };
   useEffect(() => {
     if (!isGaming) {
       history.push('/');
@@ -185,9 +184,8 @@ export const GamePlay = () => {
           <button
             id="quit-button"
             onClick={() => {
-              quitGame(username, roomName);
+              quitGame();
               Session.set('isGaming', false);
-              sessionStorage.setItem('isGaming', '');
             }}
           >
             <svg
@@ -239,9 +237,11 @@ export const GamePlay = () => {
           }}
         >
           <h4>
-            {room?.winner !== undefined &&
+            {room?.winners &&
               room.players &&
-              room?.players[room.winner]?.username + ' '}
+              room.winners.map((winner) => (
+                <span key={winner}>{room.players[winner].username + ' '}</span>
+              ))}
             wins with
             {' ' + cardCombination[Math.floor(room?.bestCardValue || 0)]}!
           </h4>
