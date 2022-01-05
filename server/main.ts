@@ -7,9 +7,10 @@ Meteor.startup(() => {
   UsersCollection.remove({});
 });
 Meteor.onConnection((connection) => {
-  const user = new User(connection.id);
-  UsersCollection.insert(user);
   connection.onClose(() => {
+    console.log(
+      `connection ${connection.id} closed from client ${connection.clientAddress}`
+    );
     const u = UsersCollection.findOne({ connectionId: connection.id });
     if (u) {
       const { username, room } = u;
@@ -23,6 +24,11 @@ Meteor.onConnection((connection) => {
       UsersCollection.remove({ _id: u._id });
     }
   });
+  const user = new User(connection.id);
+  console.log(
+    `connection ${connection.id} established from client ${connection.clientAddress}`
+  );
+  UsersCollection.insert(user);
 });
 Meteor.methods({
   login: function (username, roomName) {
