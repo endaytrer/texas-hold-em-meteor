@@ -53,6 +53,7 @@ export class Room {
     TURN: 2,
     RIVER: 3,
     DISPLAY: 4,
+    ALL_FOLD: 5,
   };
   winners: number[] = [];
   bestCardValue: number | undefined;

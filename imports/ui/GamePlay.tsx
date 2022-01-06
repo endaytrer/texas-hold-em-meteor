@@ -1,3 +1,4 @@
+import { Meteor } from 'meteor/meteor';
 import { useTracker } from 'meteor/react-meteor-data';
 import { Session } from 'meteor/session';
 import React, { useEffect, useState } from 'react';
@@ -69,24 +70,17 @@ export const GamePlay = () => {
   const username = useTracker(() => Session.get('username'));
   const isGaming = useTracker(() => Session.get('isGaming'));
   const quitGame = () => {
-    if (room) {
-      room.players = room.players.filter(
-        (player) => player.username !== username
-      );
-      if (room.players.length === 0) {
-        RoomsCollection.remove({ _id: room._id });
-      } else RoomsCollection.update({ _id: room._id }, room);
-    }
+    Meteor.call('logout');
   };
   useEffect(() => {
     if (!isGaming) {
       history.push('/');
     }
   });
-  const [tempInitial, setTempInitial] = useState(100);
-  const [tempSmall, setTempSmall] = useState(1);
-  const [tempBig, setTempBig] = useState(2);
-  const [tempBet, setTempBet] = useState(0);
+  const [tempInitial, setTempInitial] = useState('100');
+  const [tempSmall, setTempSmall] = useState('1');
+  const [tempBig, setTempBig] = useState('2');
+  const [tempBet, setTempBet] = useState('0');
   const room = useTracker(() => RoomsCollection.findOne({ roomName }));
   let isHost = Room.ownerName(room) === username;
   let players: Player[] | undefined = room?.players;
@@ -137,9 +131,7 @@ export const GamePlay = () => {
                       type="number"
                       value={tempInitial}
                       onInput={(e) =>
-                        setTempInitial(
-                          Number.parseInt((e.target as HTMLInputElement).value)
-                        )
+                        setTempInitial((e.target as HTMLInputElement).value)
                       }
                     />
                   </div>
@@ -150,9 +142,7 @@ export const GamePlay = () => {
                       type="number"
                       value={tempSmall}
                       onInput={(e) =>
-                        setTempSmall(
-                          Number.parseInt((e.target as HTMLInputElement).value)
-                        )
+                        setTempSmall((e.target as HTMLInputElement).value)
                       }
                     />
                   </div>
@@ -163,17 +153,28 @@ export const GamePlay = () => {
                       type="number"
                       value={tempBig}
                       onInput={(e) =>
-                        setTempBig(
-                          Number.parseInt((e.target as HTMLInputElement).value)
-                        )
+                        setTempBig((e.target as HTMLInputElement).value)
                       }
                     />
                   </div>
                 </div>
                 <button
                   id="start-playing"
+                  disabled={
+                    tempInitial === '' ||
+                    tempSmall === '' ||
+                    tempBig === '' ||
+                    Number.parseInt(tempSmall) < 1 ||
+                    Number.parseInt(tempBig) < Number.parseInt(tempSmall) ||
+                    Number.parseInt(tempInitial) < Number.parseInt(tempBig)
+                  }
                   onClick={() =>
-                    startGame(room, tempInitial, tempSmall, tempBig)
+                    startGame(
+                      room,
+                      Number.parseInt(tempInitial),
+                      Number.parseInt(tempSmall),
+                      Number.parseInt(tempBig)
+                    )
                   }
                 >
                   Start Playing
@@ -211,14 +212,16 @@ export const GamePlay = () => {
               <td className="stage-display">
                 {
                   {
-                    5: 'Not Gaming',
+                    6: 'Not Gaming',
                     0: 'Pre-flop',
-                    1: 'flop',
-                    2: 'turn',
-                    3: 'river',
+                    1: 'Flop',
+                    2: 'Turn',
+                    3: 'River',
+                    4: 'Summary',
+                    5: 'Summary',
                   }[
                     room?.stage === undefined || room?.stage === -1
-                      ? 5
+                      ? 6
                       : room.stage
                   ]
                 }
@@ -230,34 +233,43 @@ export const GamePlay = () => {
             </tr>
           </tbody>
         </table>
-        <div
-          className="summary"
-          style={{
-            display: room?.stage === Room.Stage.DISPLAY ? 'block' : 'none',
-          }}
-        >
-          <h4>
-            {room?.winners &&
-              room.players &&
-              room.winners.map((winner) => (
-                <span key={winner}>{room.players[winner].username + ' '}</span>
+        {room?.stage === Room.Stage.DISPLAY && (
+          <div className="summary">
+            <h4>
+              {room?.winners &&
+                room.players &&
+                room.winners.map((winner) => (
+                  <span key={winner}>
+                    {room.players[winner].username + ' '}
+                  </span>
+                ))}
+              wins with
+              {' ' + cardCombination[Math.floor(room?.bestCardValue || 0)]}!
+            </h4>
+            <div className="show-container">
+              {room?.bestCardSet?.map((card: CardObject) => (
+                <Card
+                  key={
+                    CardObject.getRankString(card) +
+                    CardObject.getSuitString(card)
+                  }
+                  card={card}
+                  smallDisplay
+                ></Card>
               ))}
-            wins with
-            {' ' + cardCombination[Math.floor(room?.bestCardValue || 0)]}!
-          </h4>
-          <div className="show-container">
-            {room?.bestCardSet?.map((card: CardObject) => (
-              <Card
-                key={
-                  CardObject.getRankString(card) +
-                  CardObject.getSuitString(card)
-                }
-                card={card}
-                smallDisplay
-              ></Card>
-            ))}
+            </div>
           </div>
-        </div>
+        )}
+        {room?.stage === Room.Stage.ALL_FOLD && (
+          <div className="summary">
+            <h4>
+              {room?.winners &&
+                room.players &&
+                room.players[room.winners[0]].username + ' '}
+              wins because anyone else folds!
+            </h4>
+          </div>
+        )}
         <div className="public-cards">
           <h3>Public</h3>
           <div className="public-cards-container">
@@ -320,9 +332,7 @@ export const GamePlay = () => {
                 value={tempBet}
                 maxLength={4}
                 onInput={(e) =>
-                  setTempBet(
-                    Number.parseInt((e.target as HTMLInputElement).value)
-                  )
+                  setTempBet((e.target as HTMLInputElement).value)
                 }
               />
             </span>
@@ -351,21 +361,25 @@ export const GamePlay = () => {
               id="raise-button"
               disabled={
                 !isPlayer ||
-                (self && room && self.stageBet + tempBet <= room.nowStageBet) ||
-                (room && self && tempBet > self.money) ||
-                tempBet <= 0 ||
+                tempBet === '' ||
+                (self &&
+                  room &&
+                  self.stageBet + Number.parseInt(tempBet) <=
+                    room.nowStageBet) ||
+                (room && self && Number.parseInt(tempBet) > self.money) ||
+                Number.parseInt(tempBet) <= 0 ||
                 room?.stage === Room.Stage.DISPLAY
               }
               onClick={() => {
-                setTempBet(0);
-                raise(room, tempBet);
+                setTempBet('0');
+                raise(room, Number.parseInt(tempBet));
               }}
             >
               {raiseText(
                 room?.nowStageBet,
                 self?.stageBet,
                 self?.money,
-                tempBet
+                Number.parseInt(tempBet)
               )}
             </button>
           </div>

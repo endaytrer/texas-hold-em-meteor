@@ -48,8 +48,10 @@ export function startGame(
   room.bestCardSet = undefined;
   room.bestCardValue = undefined;
   room.winners = [];
-  Player.bet(room.players[Room.sb(room)], smallBlind);
-  Player.bet(room.players[Room.bb(room)], bigBlind);
+  Player.bet(room.players[Room.sb(room)], room.smallBlind);
+  room.players[Room.sb(room)].lastAction = undefined;
+  Player.bet(room.players[Room.bb(room)], room.bigBlind);
+  room.players[Room.bb(room)].lastAction = undefined;
   room.pot = smallBlind + bigBlind;
   RoomsCollection.update({ _id: room._id }, room);
 }
@@ -57,6 +59,11 @@ export function newGame(room: Room) {
   room.deck = new Deck();
   room.public = new Public();
   room.players = room.players.filter((player) => player.money !== 0);
+  if (room.players.length <= 1) {
+    room.stage = Room.Stage.NOT_GAMING;
+    RoomsCollection.update({ _id: room._id }, room);
+    return;
+  }
   for (let player of room.players) {
     player.hand = new Hand();
     player.stageBet = 0;
@@ -94,11 +101,15 @@ export function fold(room: Room | undefined) {
       (player: Player) => player.status !== Player.PlayerStatus.FOLDED
     ).length === 1
   ) {
-    const lastPlayer = room.players.find(
+    const lastPlayerIndex = room.players.findIndex(
       (player) => player.status !== Player.PlayerStatus.FOLDED
-    ) as Player;
-    lastPlayer.money += room.pot;
-    newGame(room);
+    );
+    room.players[lastPlayerIndex].money += room.pot;
+    room.winners = [lastPlayerIndex];
+    room.stage = Room.Stage.ALL_FOLD;
+    room.nowTurn = -1;
+    RoomsCollection.update({ _id: room._id }, room);
+    setTimeout(() => newGame(room), 2000);
     return;
   }
   nextPlayer(room);
@@ -166,8 +177,10 @@ export function raise(room: Room | undefined, raiseMoney: number) {
   Player.bet(player, raiseMoney);
   if (room.nowStageBet === 0) {
     player.lastAction = `Bet \$${raiseMoney}`;
-  } else {
+  } else if (player.money !== 0) {
     player.lastAction = `Raise \$${raiseMoney}`;
+  } else {
+    player.lastAction = `All in \$${raiseMoney}`;
   }
   room.pot += raiseMoney;
   room.nowStageBet = player.stageBet;

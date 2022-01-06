@@ -20,9 +20,7 @@ export const Card = (props: { card: CardObject; smallDisplay?: boolean }) => {
 export const EmptyCard = (props: { smallDisplay?: boolean }) => {
   return (
     <div className={`card back ${props.smallDisplay ? 'small' : 'regular'}`}>
-      <div className="rank">
-        {CardObject.getSuitString(new CardObject(Suit.Spade, 1))}
-      </div>
+      <div className="rank">⚜️</div>
     </div>
   );
 };
