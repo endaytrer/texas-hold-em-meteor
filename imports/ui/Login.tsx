@@ -24,6 +24,10 @@ function joinRoom(roomName: string, username: string, history: History) {
       alert('名称已被占用');
       return;
     }
+    if (room.players.length >= 23) {
+      alert('房间人数过多');
+      return;
+    }
     const player = new Player(username, room.initial);
     Meteor.call('login', username, roomName);
     if (room.stage !== Room.Stage.NOT_GAMING) {

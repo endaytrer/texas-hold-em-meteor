@@ -20,18 +20,39 @@ export class Player {
     this.money = money;
     this.stageBet = 0;
   }
-  public static bet(player: Player, money: number) {
+  /**
+   * return true if all in
+   */
+  public static bet(player: Player, money: number): [boolean, number] {
+    let ans = false;
     if (money >= player.money) {
       player.status = Player.PlayerStatus.ALL_IN;
       money = player.money;
       player.lastAction = `All In \$${money}`;
+      ans = true;
     } else {
       player.lastAction = `Call \$${money}`;
     }
     player.stageBet += money;
     player.money -= money;
+    return [ans, money];
   }
 }
+
+export class Pot {
+  size: number;
+  players: number[];
+  winners: number[] = [];
+  bestCardValue: number | undefined;
+  bestCardSet: Card[] | undefined;
+  constructor(room: Room) {
+    this.size = 0;
+    this.players = room.players
+      ? room.players.map((_value, index) => index)
+      : [];
+  }
+}
+
 export class Room {
   [x: string]: any;
   roomName: string;
@@ -43,8 +64,12 @@ export class Room {
   bigBlind = 2;
   initial = 100;
   stage = Room.Stage.NOT_GAMING;
+  displayingPotId: number | undefined;
   nowStageBet = 0;
-  pot = 0;
+  winners: number[] = [];
+  bestCardValue: number | undefined;
+  bestCardSet: Card[] | undefined;
+  pots = [new Pot(this)];
   lastRiser = 0;
   static Stage = {
     NOT_GAMING: -1,
@@ -55,9 +80,6 @@ export class Room {
     DISPLAY: 4,
     ALL_FOLD: 5,
   };
-  winners: number[] = [];
-  bestCardValue: number | undefined;
-  bestCardSet: Card[] | undefined;
   dealer = 0;
   static sb(room: Room): number {
     if (room.players.length === 2) {

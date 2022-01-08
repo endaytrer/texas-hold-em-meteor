@@ -1,5 +1,5 @@
 import { Meteor } from 'meteor/meteor';
-import { RoomsCollection } from '../imports/api/room';
+import { Room, RoomsCollection } from '../imports/api/room';
 import { User, UsersCollection } from '/imports/api/user';
 
 function baseLogOut(connection: Meteor.Connection) {
@@ -14,6 +14,9 @@ function baseLogOut(connection: Meteor.Connection) {
     const r = RoomsCollection.findOne({ roomName });
     if (r) {
       r.players = r.players.filter((player) => player.username !== username);
+      if (r.players.length === 1) {
+        r.stage = Room.Stage.NOT_GAMING;
+      }
       if (r.players.length === 0) {
         RoomsCollection.remove({ _id: r._id });
         console.log(

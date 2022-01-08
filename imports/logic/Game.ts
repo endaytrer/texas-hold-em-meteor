@@ -1,4 +1,4 @@
-import { Player, Room, RoomsCollection } from '../api/room';
+import { Player, Pot, Room, RoomsCollection } from '../api/room';
 import {
   Card,
   cardCompare,
@@ -8,7 +8,6 @@ import {
   Hand,
   Public,
 } from './Card';
-
 export function startGame(
   room: Room | undefined,
   initial: number,
@@ -24,41 +23,18 @@ export function startGame(
     return;
   }
   room.initial = initial;
-  room.deck = new Deck();
-  room.public = new Public();
-  for (let player of room.players) {
-    player.money = initial;
-    player.hand = new Hand();
-    player.stageBet = 0;
-    player.bestCombination = undefined;
-    player.bestValue = -1;
-    player.status = Player.PlayerStatus.NORMAL;
-    player.lastAction = undefined;
-    Deck.deal(room.deck, player.hand);
-    Deck.deal(room.deck, player.hand);
-  }
   room.smallBlind = smallBlind;
   room.bigBlind = bigBlind;
-  // game
-  room.pot = 0;
-  room.stage = Room.Stage.PRE_FLOP;
-  room.nowTurn = room.dealer;
-  room.nowStageBet = room.bigBlind;
-  room.lastRiser = room.dealer;
-  room.bestCardSet = undefined;
-  room.bestCardValue = undefined;
-  room.winners = [];
-  Player.bet(room.players[Room.sb(room)], room.smallBlind);
-  room.players[Room.sb(room)].lastAction = undefined;
-  Player.bet(room.players[Room.bb(room)], room.bigBlind);
-  room.players[Room.bb(room)].lastAction = undefined;
-  room.pot = smallBlind + bigBlind;
-  RoomsCollection.update({ _id: room._id }, room);
+  for (let player of room.players) {
+    player.money = room.initial;
+  }
+  newGame(room);
 }
 export function newGame(room: Room) {
   room.deck = new Deck();
   room.public = new Public();
   room.players = room.players.filter((player) => player.money !== 0);
+  room.pots = [new Pot(room)];
   if (room.players.length <= 1) {
     room.stage = Room.Stage.NOT_GAMING;
     RoomsCollection.update({ _id: room._id }, room);
@@ -74,20 +50,20 @@ export function newGame(room: Room) {
     Deck.deal(room.deck, player.hand);
     Deck.deal(room.deck, player.hand);
   }
+  room.displayingPotId = undefined;
   room.stage = Room.Stage.PRE_FLOP;
   room.dealer = (room.dealer + 1) % room.players.length;
-  room.nowTurn = room.dealer;
+  room.nowTurn = (Room.bb(room) + 1) % room.players.length;
   room.lastRiser = room.dealer;
-  room.pot = 0;
   room.nowStageBet = room.bigBlind;
-  room.bestCardSet = undefined;
-  room.bestCardValue = undefined;
-  room.winners = [];
-  Player.bet(room.players[Room.sb(room)], room.smallBlind);
+  const [_ai1, money1] = Player.bet(
+    room.players[Room.sb(room)],
+    room.smallBlind
+  );
   room.players[Room.sb(room)].lastAction = undefined;
-  Player.bet(room.players[Room.bb(room)], room.bigBlind);
+  const [_ai2, money2] = Player.bet(room.players[Room.bb(room)], room.bigBlind);
   room.players[Room.bb(room)].lastAction = undefined;
-  room.pot = room.smallBlind + room.bigBlind;
+  room.pots[0].size = money1 + money2;
   RoomsCollection.update({ _id: room._id }, room);
 }
 export function fold(room: Room | undefined) {
@@ -104,8 +80,8 @@ export function fold(room: Room | undefined) {
     const lastPlayerIndex = room.players.findIndex(
       (player) => player.status !== Player.PlayerStatus.FOLDED
     );
-    room.players[lastPlayerIndex].money += room.pot;
-    room.winners = [lastPlayerIndex];
+    room.players[lastPlayerIndex].money += room.pots[room.pots.length - 1].size;
+    room.pots[room.pots.length - 1].winners = [lastPlayerIndex];
     room.stage = Room.Stage.ALL_FOLD;
     room.nowTurn = -1;
     RoomsCollection.update({ _id: room._id }, room);
@@ -115,7 +91,37 @@ export function fold(room: Room | undefined) {
   nextPlayer(room);
 }
 export function nextStage(room: Room) {
+  // Split pot;
+  const pot = room.pots[room.pots.length - 1];
+  pot.players = pot.players.filter(
+    (id) => room.players[id].status !== Player.PlayerStatus.FOLDED
+  );
+  const sequence: [number, number][] = [];
+  for (const playerId of pot.players) {
+    sequence.push([playerId, room.players[playerId].stageBet]);
+  }
+  sequence.sort((a, b) => a[1] - b[1]);
+  // make differential array
+  for (let i = sequence.length - 1; i > 0; i--) {
+    sequence[i][1] -= sequence[i - 1][1];
+  }
+  for (let i = 1; i < sequence.length; i++) {
+    if (sequence[i][1] > 0) {
+      const newPot = new Pot(room);
+      newPot.players = pot.players.filter(
+        (id) =>
+          sequence
+            .slice(i)
+            .map((v) => v[0])
+            .findIndex((v) => v === id) !== -1
+      );
+      newPot.size = sequence[i][1] * (sequence.length - i);
+      pot.size -= sequence[i][1] * (sequence.length - i);
+      room.pots.push(newPot);
+    }
+  }
   for (let i = 0; i < room.players.length; i++) {
+    room.players[i].stageBet = 0;
     room.players[i].lastAction = undefined;
   }
   if (room.stage === Room.Stage.PRE_FLOP) {
@@ -123,8 +129,16 @@ export function nextStage(room: Room) {
     Deck.deal(room.deck, room.public);
     Deck.deal(room.deck, room.public);
   } else if (room.stage === Room.Stage.RIVER) {
-    compare(room);
-    setTimeout(() => newGame(room), 5000);
+    room.stage = Room.Stage.DISPLAY;
+    const waitLen = 4000 * room.pots.length;
+    for (let i = 0; i < room.pots.length; i++) {
+      setTimeout(() => {
+        compare(room, room.pots[i]);
+        room.displayingPotId = i;
+        RoomsCollection.update({ _id: room._id }, room);
+      }, 4000 * i);
+    }
+    setTimeout(() => newGame(room), waitLen);
     return;
   } else {
     Deck.deal(room.deck, room.public);
@@ -155,34 +169,35 @@ export function check(room: Room | undefined) {
   if (!room) {
     return;
   }
+  room.players[room.nowTurn].lastAction = 'Check';
+  nextPlayer(room);
+}
+export function call(room: Room) {
+  if (!room) {
+    return;
+  }
   const player = room.players[room.nowTurn];
   if (player.stageBet < room.nowStageBet) {
-    room.pot +=
-      player.money > room.nowStageBet - player.stageBet
-        ? room.nowStageBet - player.stageBet
-        : player.money;
-    Player.bet(player, room.nowStageBet - player.stageBet);
-  } else {
-    room.players[room.nowTurn].lastAction = 'Check';
+    const [_, money] = Player.bet(player, room.nowStageBet - player.stageBet);
+    room.pots[room.pots.length - 1].size += money;
   }
   nextPlayer(room);
 }
-
 export function raise(room: Room | undefined, raiseMoney: number) {
   if (!room) {
     return;
   }
   const player = room.players[room.nowTurn];
   room.lastRiser = room.nowTurn;
-  Player.bet(player, raiseMoney);
+  const [isAllIn, money] = Player.bet(player, raiseMoney);
   if (room.nowStageBet === 0) {
-    player.lastAction = `Bet \$${raiseMoney}`;
-  } else if (player.money !== 0) {
-    player.lastAction = `Raise \$${raiseMoney}`;
+    player.lastAction = `Bet \$${money}`;
+  } else if (!isAllIn) {
+    player.lastAction = `Raise \$${money}`;
   } else {
-    player.lastAction = `All in \$${raiseMoney}`;
+    player.lastAction = `All in \$${money}`;
   }
-  room.pot += raiseMoney;
+  room.pots[room.pots.length - 1].size += raiseMoney;
   room.nowStageBet = player.stageBet;
   nextPlayer(room);
 }
@@ -232,11 +247,12 @@ export function getBestHand(cards: Card[]) {
   }
   return { bestHand, bestValue };
 }
-export function compare(room: Room) {
+export function compare(room: Room, pot: Pot) {
   let biggestPlayers: number[] = [];
   let biggestHand: Card[] = [];
   let biggestValue = -1;
-  room.players.forEach((player, index) => {
+  pot.players.forEach((playerId) => {
+    const player = room.players[playerId];
     if (player.status === Player.PlayerStatus.FOLDED) return;
     const { bestHand, bestValue } = getBestHand(
       player.hand.cards.slice().concat(room.public.cards)
@@ -245,31 +261,28 @@ export function compare(room: Room) {
       bestValue > biggestValue ||
       (bestValue === biggestValue && cardSetCompare(bestHand, biggestHand) > 0)
     ) {
-      biggestPlayers = [index];
+      biggestPlayers = [playerId];
       biggestHand = bestHand;
       biggestValue = bestValue;
     } else if (
       bestValue === biggestValue &&
       cardSetCompare(bestHand, biggestHand) === 0
     ) {
-      biggestPlayers.push(index);
+      biggestPlayers.push(playerId);
     }
   });
-  room.stage = Room.Stage.DISPLAY;
-  room.winners = biggestPlayers.slice();
-  room.bestCardValue = biggestValue;
-  room.bestCardSet = biggestHand.sort((a, b) => cardCompare(a, b));
+  pot.winners = biggestPlayers.slice();
+  pot.bestCardValue = biggestValue;
+  pot.bestCardSet = biggestHand.sort((a, b) => cardCompare(a, b)).slice();
   let i = room.dealer;
   let cnt = 0;
   do {
     if (biggestPlayers.find((target) => target === i) !== undefined) {
       room.players[i].money +=
-        Math.floor(room.pot / biggestPlayers.length) +
-        (cnt < room.pot % biggestPlayers.length ? 1 : 0);
+        Math.floor(pot.size / biggestPlayers.length) +
+        (cnt < pot.size % biggestPlayers.length ? 1 : 0);
       cnt++;
     }
     i = (i + 1) % room.players.length;
   } while (i !== room.dealer);
-  room.pot = 0;
-  RoomsCollection.update({ _id: room._id }, room);
 }

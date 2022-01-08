@@ -5,7 +5,7 @@ import React, { useEffect, useState } from 'react';
 import { useHistory } from 'react-router';
 import { Player, Room, RoomsCollection } from '../api/room';
 import { Card as CardObject } from '../logic/Card';
-import { check, fold, raise, startGame } from '../logic/Game';
+import { call, check, fold, raise, startGame } from '../logic/Game';
 import { Card } from './components/Card';
 import { PlayerDisplay } from './components/PlayerDisplay';
 import './GamePlay.css';
@@ -227,45 +227,62 @@ export const GamePlay = () => {
                 }
               </td>
             </tr>
-            <tr>
-              <td className="now-stage">Pot</td>
-              <td className="stage-display">{room?.pot}</td>
-            </tr>
+            {room?.pots.map((pot, index) => (
+              <tr key={index}>
+                <td className="now-stage">
+                  {index ? 'Side Pot' + index : 'Main Pot'}
+                </td>
+                <td className="stage-display">{'$' + pot.size}</td>
+              </tr>
+            ))}
           </tbody>
         </table>
         {room?.stage === Room.Stage.DISPLAY && (
           <div className="summary">
             <h4>
-              {room?.winners &&
+              {room?.pots[room.displayingPotId || 0].winners &&
                 room.players &&
-                room.winners.map((winner) => (
+                room?.pots[room.displayingPotId || 0].winners.map((winner) => (
                   <span key={winner}>
                     {room.players[winner].username + ' '}
                   </span>
                 ))}
-              wins with
-              {' ' + cardCombination[Math.floor(room?.bestCardValue || 0)]}!
+              wins{' '}
+              {room.displayingPotId
+                ? 'Side Pot ' + room.displayingPotId
+                : 'Main Pot'}{' '}
+              with
+              {' ' +
+                cardCombination[
+                  Math.floor(
+                    room?.pots[room.displayingPotId || 0].bestCardValue || 0
+                  )
+                ]}
+              !
             </h4>
             <div className="show-container">
-              {room?.bestCardSet?.map((card: CardObject) => (
-                <Card
-                  key={
-                    CardObject.getRankString(card) +
-                    CardObject.getSuitString(card)
-                  }
-                  card={card}
-                  smallDisplay
-                ></Card>
-              ))}
+              {room?.pots[room.displayingPotId || 0].bestCardSet?.map(
+                (card: CardObject) => (
+                  <Card
+                    key={
+                      CardObject.getRankString(card) +
+                      CardObject.getSuitString(card)
+                    }
+                    card={card}
+                    smallDisplay
+                  ></Card>
+                )
+              )}
             </div>
           </div>
         )}
         {room?.stage === Room.Stage.ALL_FOLD && (
           <div className="summary">
             <h4>
-              {room?.winners &&
+              {room?.pots[room?.pots.length - 1].winners &&
                 room.players &&
-                room.players[room.winners[0]].username + ' '}
+                room.players[room.pots[room.pots.length - 1].winners[0]]
+                  .username + ' '}
               wins because anyone else folds!
             </h4>
           </div>
@@ -352,7 +369,11 @@ export const GamePlay = () => {
               id="check-button"
               disabled={!isPlayer || room?.stage === Room.Stage.DISPLAY}
               onClick={() => {
-                check(room);
+                if (!room) return;
+                checkText(room.nowStageBet, self?.stageBet, self?.money) ===
+                'Check'
+                  ? check(room)
+                  : call(room);
               }}
             >
               {checkText(room?.nowStageBet, self?.stageBet, self?.money)}
