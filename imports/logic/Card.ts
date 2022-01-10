@@ -82,11 +82,11 @@ function isStraight(sortedCards: Card[]): boolean {
     return true;
   }
   if (
-    sortedCards[0].rank === 1 &&
-    sortedCards[1].rank === 2 &&
-    sortedCards[2].rank === 3 &&
-    sortedCards[3].rank === 4 &&
-    sortedCards[4].rank === 5
+    sortedCards[4].rank === 1 &&
+    sortedCards[0].rank === 2 &&
+    sortedCards[1].rank === 3 &&
+    sortedCards[2].rank === 4 &&
+    sortedCards[3].rank === 5
   ) {
     return true;
   }
